@@ -21,4 +21,9 @@ public partial class LoginMenu : UserControl
     {
         OptionSelected?.Invoke(Option.LAN);
     }
+
+    private void AI_Click(object sender, RoutedEventArgs e)
+    {
+        OptionSelected?.Invoke(Option.PlayAgainstAI);
+    }
 }

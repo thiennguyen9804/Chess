@@ -23,7 +23,7 @@ namespace SocketProject
             {
                 return false;
             }
-            //return true; 
+            
         }
 
         #endregion
@@ -62,11 +62,7 @@ namespace SocketProject
             return ms.ToArray();
         }
 
-        /// <summary>
-        /// Giải nén mảng byte[] thành đối tượng object
-        /// </summary>
-        /// <param name="theByteArray"></param>
-        /// <returns></returns>
+        
         public SocketData DeserializeData(byte[] theByteArray)
         {
             MemoryStream ms = new MemoryStream(theByteArray);
@@ -75,11 +71,7 @@ namespace SocketProject
             return (SocketData)bf1.Deserialize(ms);
         }
 
-        /// <summary>
-        /// Lấy ra IP V4 của card mạng đang dùng
-        /// </summary>
-        /// <param name="_type"></param>
-        /// <returns></returns>
+        
         public string GetLocalIPv4(NetworkInterfaceType _type)
         {
             string output = "";

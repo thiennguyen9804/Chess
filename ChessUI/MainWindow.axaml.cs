@@ -21,14 +21,16 @@ namespace ChessUI
         private readonly Image[,] pieceImages = new Image[8, 8];
         private readonly Rectangle[,] highlights = new Rectangle[8, 8];
         private readonly Dictionary<Position, Move> moveCache = new Dictionary<Position, Move>();
-
         private GameState gameState;
         private Position selectedPos = null;
         private SocketManager socket;
         private LoginMenu loginMenu;
         private Board board = new Board();
         private Stack<Board> stack = new Stack<Board>();
+        private Stack<GameState> gameStateStack = new Stack<GameState>();
         private bool isLANRun = false;
+        private Player player;
+        private bool isAIActive = false;
         //void SetGameState(GameState gs) => gameState = gs;
         //string GetText() => loginMenu.MessageTextBlock.Text ?? "";
         public MainWindow()
@@ -50,7 +52,6 @@ namespace ChessUI
                     Image image = new Image();
                     pieceImages[r, c] = image;
                     PieceGrid.Children.Add(image);
-
                     Rectangle highlight = new Rectangle();
                     highlights[r, c] = highlight;
                     HighlightGrid.Children.Add(highlight);
@@ -71,9 +72,11 @@ namespace ChessUI
         private void BoardGrid_PointerPressed(object sender, PointerPressedEventArgs e)
         {
             if (IsMenuOnScreen())
-            {
                 return;
-            }
+
+            if (isLANRun && player != gameState.CurrentPlayer)
+                return;
+
             Point point = e.GetPosition(BoardGrid);
             Position pos = ToSquarePosition(point);
 
@@ -94,6 +97,7 @@ namespace ChessUI
             }
         }
 
+        #region Function to redraw image when receive
 
         async void RunSetImage(Image i, Piece p)
         {
@@ -121,6 +125,8 @@ namespace ChessUI
         void SetImage(Image i, Piece p) => i.Source = Images.GetImage(p);
         //IImage GetImage(Image i) => i.Source ?? null;
 
+        #endregion
+
         void DrawBoard_OtherPlayer(Board board)
         {
             for (int r = 0; r < 8; r++)
@@ -139,8 +145,10 @@ namespace ChessUI
             gameState = otherGameState;
             //gameState.CurrentPlayer.Oppenent();
             DrawBoard_OtherPlayer(gameState.Board);
+            //isTurn = true;
 
         }
+
         private Position ToSquarePosition(Point point)
         {
             double squareSize = (BoardGrid.Bounds.Width / 8);
@@ -202,10 +210,16 @@ namespace ChessUI
                 ShowGameOver();
             }
 
+            /*
             if (gameState.CurrentPlayer == Player.Black)
             {
                 //MakeRandomMove(gameState.CurrentPlayer);
+                Board copyBoard = board.Copy();
+                GameState copyGameState = new GameState(gameState.CurrentPlayer, copyBoard);
+                Move bestMove = MiniMaxRoot(3, copyGameState);
+                HandleMove(bestMove);
             }
+            */
         }
 
         /*
@@ -222,51 +236,105 @@ namespace ChessUI
         }
         */
 
-        /*
-        private Move MiniMaxRoot(int depth, Player player)
-        {
-            IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(Player.Black); // get all moves posible
-            List<Move> moveList = movesCollection.ToList();
-            
-            int bestMove = -99999;
-            Move bestMoveFound;
+        #region AI code goes here
 
-            for(int i = 0; i < moveList.Count; i++)
+        private Move MiniMaxRoot(int depth, GameState gameState)
+        {
+            /*
+            Board boardCopy = board.Copy();
+            GameState gameStateCopy = new GameState(gameState.CurrentPlayer, boardCopy);
+            */
+            IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(gameState.CurrentPlayer); // get all moves posible
+            List<Move> moveList = movesCollection.ToList();
+
+            int bestMove = -99999;
+            Move bestMoveFound = new Move();
+
+            for (int i = 0; i < moveList.Count; i++)
             {
                 Move newGameMove = moveList[i];
                 HandleMove(newGameMove);
-                player.Oppenent();
-                stack.Push(board);
-                int value = MiniMax(depth - 1, -10000, 10000, Player.Black);
-                if(stack.Count > 0)
+                gameStateStack.Push(gameState);
+                int value = MiniMax(depth - 1, gameState, -10000, 10000);
+                if (stack.Count > 0)
                 {
-                    board = stack.Pop();
+                    gameState = gameStateStack.Pop();
                 }
 
-                if(value >= bestMove)
+                if (value >= bestMove)
                 {
                     bestMove = value;
                     bestMoveFound = newGameMove;
                 }
             }
-            
 
-            if(bestMoveFound.Type == MoveType.Normal)
+
+            return bestMoveFound;
+
+        }
+
+        private int MiniMax(int depth, GameState gameState, int alpha, int beta)
+        {
+            if (depth == 0)
             {
-                return (NormalMove)bestMoveFound;
-            } 
+                return -gameState.Board.GetValue();
+            }
+
+            if (gameState.CurrentPlayer == Player.Black)
+            {
+                IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(gameState.CurrentPlayer); // get all moves posible
+                List<Move> moveList = movesCollection.ToList();
+                int bestMove = -99999;
+                for (int i = 0; i < moveList.Count; i++)
+                {
+                    gameStateStack.Push(gameState);
+                    Move newGameMove = moveList[i];
+                    HandleMove(newGameMove);
+                    bestMove = Math.Max(bestMove, MiniMax(depth - 1, gameState, alpha, beta));
+                    if (gameStateStack.Count > 0)
+                    {
+                        gameState = gameStateStack.Pop();
+                    }
+
+                    alpha = Math.Max(alpha, bestMove);
+                    if (beta <= alpha)
+                    {
+                        return bestMove;
+                    }
+                }
+
+                return bestMove;
+            }
+
             else
             {
+                int bestMove = 9999;
+                IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(Player.Black); // get all moves posible
+                List<Move> moveList = movesCollection.ToList();
+                for (int i = 0; i < moveList.Count; i++)
+                {
+                    gameStateStack.Push(gameState);
+                    Move newGameMove = moveList[i];
+                    HandleMove(newGameMove);
+                    bestMove = Math.Min(bestMove, MiniMax(depth - 1, gameState, alpha, beta));
+                    if (gameStateStack.Count > 0)
+                    {
+                        gameState = gameStateStack.Pop();
+                    }
 
+                    beta = Math.Min(beta, bestMove);
+                    if (beta <= alpha)
+                    {
+                        return bestMove;
+                    }
+                }
+
+                return bestMove;
             }
         }
 
-        */
 
-        private int MiniMax(int depth, int alpha, int beta, Player player)
-        {
-            return 10;
-        }
+        #endregion
 
         private void CacheMoves(IEnumerable<Move> moves)
         {
@@ -343,11 +411,9 @@ namespace ChessUI
         {
             PauseMenu pauseMenu = new PauseMenu();
             MenuContainer.Content = pauseMenu;
-
             pauseMenu.OptionSelected += option =>
             {
                 MenuContainer.Content = null;
-
                 if (option == Option.Restart)
                 {
                     RestartGame();
@@ -370,25 +436,32 @@ namespace ChessUI
                 MenuContainer.Content = null;
                 if (option == Option.Start)
                 {
+                    //player = null;
                     RestartGame();
                 }
                 else if (option == Option.LAN)
                 {
                     isLANRun = true;
                     LANRun();
+                } else if (option == Option.PlayAgainstAI)
+                {
+                    isAIActive = true;
                 }
             };
         }
 
+        #region LAN goes here
         void LANRun()
         {
             socket.IP = loginMenu.IPTextBox.Text;
             if (!socket.ConnectServer()) // is server
             {
                 socket.CreateServer();
+                player = Player.White;
             }
             else // is client
             {
+                player = Player.Black;
                 Listen();
             }
         }
@@ -399,7 +472,7 @@ namespace ChessUI
             {
                 Thread listenThread = new Thread(() =>
                 {
-                    SocketData data = (SocketData)socket.Receive();
+                    SocketData data = socket.Receive();
                     //_ = Task.Run(() => OnTextFromAnotherThread(data)); // data can be replaced by whatever u want
                     ProcessData(data);
                 });
@@ -413,6 +486,8 @@ namespace ChessUI
             }
 
         }
+
+
 
         /*
         async void ShowMessage(string message)
@@ -456,6 +531,8 @@ namespace ChessUI
 
             Listen();
         }
+        #endregion
+
     }
 
 }

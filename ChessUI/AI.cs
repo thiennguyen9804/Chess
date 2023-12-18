@@ -6,14 +6,7 @@ using System.Threading.Tasks;
 
 namespace ChessUI
 {
-    public enum Option
+    internal class AI
     {
-        Restart,
-        Exit,
-        Continue,
-        Start,
-        LAN,
-        OK,
-        PlayAgainstAI
     }
 }

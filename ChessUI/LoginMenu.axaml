@@ -5,19 +5,17 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
              x:Class="ChessUI.LoginMenu">
 	<StackPanel Background="White">
-		<Button Click="NewGame_Click" Content="New Game"
+		<Button Click="NewGame_Click" Content="Two Players Mode"
 				Classes="Button" Height="60" FontSize="30"/>
 		<DockPanel>
 			<Button Classes="Button" 
 					Click="LAN_Click" 
-					Content="LAN" Width="200"
+					Content="Play via LAN" Width="200"
 					Height="60" FontSize="30"/>
 			<TextBox Name="IPTextBox" VerticalContentAlignment="Center"
 					 Height="60" FontSize="30"/>
 		</DockPanel>
-		<TextBlock Classes="TextBlock"
-				   Height="500"
-				   FontSize="30"
-				   Name="MessageTextBlock"/>
+		<Button Click="AI_Click" Content="Play against the Computer"
+				Classes="Button" Height="60" FontSize="30"/>
 	</StackPanel>
 </UserControl>

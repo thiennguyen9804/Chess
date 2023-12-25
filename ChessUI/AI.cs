@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace ChessUI
 {
-    internal class AI
+    public class AI
     {
+
     }
 }

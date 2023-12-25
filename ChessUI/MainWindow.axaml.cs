@@ -146,7 +146,6 @@ namespace ChessUI
             //gameState.CurrentPlayer.Oppenent();
             DrawBoard_OtherPlayer(gameState.Board);
             //isTurn = true;
-
         }
 
         private Position ToSquarePosition(Point point)
@@ -211,18 +210,24 @@ namespace ChessUI
             }
 
             /*
-            if (gameState.CurrentPlayer == Player.Black)
+            if (isAIActive && gameState.CurrentPlayer == Player.Black)
             {
                 //MakeRandomMove(gameState.CurrentPlayer);
                 Board copyBoard = board.Copy();
                 GameState copyGameState = new GameState(gameState.CurrentPlayer, copyBoard);
-                Move bestMove = MiniMaxRoot(3, copyGameState);
-                HandleMove(bestMove);
+                Player AIPlayer = copyGameState.CurrentPlayer;
+                Move bestMove = MiniMaxRoot(3, copyGameState, AIPlayer);
+                gameState.MakeMove(bestMove);
+                DrawBoard(gameState.Board);
+                SetCursor(gameState.CurrentPlayer);
             }
             */
+
+            if (isAIActive && gameState.CurrentPlayer == Player.Black)
+                AIMakeMove(gameState.CurrentPlayer);
         }
 
-        /*
+        
         private void MakeRandomMove(Player player)
         {
             IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(player); // get all moves posible
@@ -231,20 +236,27 @@ namespace ChessUI
             if (!gameState.IsGameOver())
             {
                 int randomNext = random.Next(0, moveList.Count - 1);
-                HandleMove(moveList[randomNext]); // make the move
+                HandleMove(moveList[randomNext]);
             }
         }
-        */
+        
+        private void AIMakeMove(Player player)
+        {
+            board.
+            GameState copyGameState = new GameState(player, board.Copy());
+            Move bestMove = MiniMaxRoot(3, copyGameState, player);
+            HandleMove(bestMove);
+        }
 
         #region AI code goes here
 
-        private Move MiniMaxRoot(int depth, GameState gameState)
+        private Move MiniMaxRoot(int depth, GameState gameState, Player player)
         {
             /*
             Board boardCopy = board.Copy();
             GameState gameStateCopy = new GameState(gameState.CurrentPlayer, boardCopy);
             */
-            IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(gameState.CurrentPlayer); // get all moves posible
+            IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(player); // get all moves posible
             List<Move> moveList = movesCollection.ToList();
 
             int bestMove = -99999;
@@ -252,14 +264,13 @@ namespace ChessUI
 
             for (int i = 0; i < moveList.Count; i++)
             {
-                Move newGameMove = moveList[i];
-                HandleMove(newGameMove);
                 gameStateStack.Push(gameState);
-                int value = MiniMax(depth - 1, gameState, -10000, 10000);
-                if (stack.Count > 0)
-                {
-                    gameState = gameStateStack.Pop();
-                }
+                Move newGameMove = moveList[i];
+                gameState.MakeMove(newGameMove);
+                //DrawBoard(gameState.Board);
+
+                int value = MiniMax(depth - 1, gameState, -10000, 10000, player.Oppenent());
+                gameState = gameStateStack.Pop();
 
                 if (value >= bestMove)
                 {
@@ -273,24 +284,24 @@ namespace ChessUI
 
         }
 
-        private int MiniMax(int depth, GameState gameState, int alpha, int beta)
+        private int MiniMax(int depth, GameState gameState, int alpha, int beta, Player player)
         {
             if (depth == 0)
             {
                 return -gameState.Board.GetValue();
             }
 
-            if (gameState.CurrentPlayer == Player.Black)
+            if (player == Player.Black)
             {
-                IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(gameState.CurrentPlayer); // get all moves posible
+                IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(player); // get all moves posible
                 List<Move> moveList = movesCollection.ToList();
                 int bestMove = -99999;
                 for (int i = 0; i < moveList.Count; i++)
                 {
                     gameStateStack.Push(gameState);
                     Move newGameMove = moveList[i];
-                    HandleMove(newGameMove);
-                    bestMove = Math.Max(bestMove, MiniMax(depth - 1, gameState, alpha, beta));
+                    gameState.MakeMove(newGameMove);
+                    bestMove = Math.Max(bestMove, MiniMax(depth - 1, gameState, alpha, beta, player.Oppenent()));
                     if (gameStateStack.Count > 0)
                     {
                         gameState = gameStateStack.Pop();
@@ -308,15 +319,15 @@ namespace ChessUI
 
             else
             {
-                int bestMove = 9999;
-                IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(Player.Black); // get all moves posible
+                int bestMove = 99999;
+                IEnumerable<Move> movesCollection = gameState.AllLegalMovesFor(player); // get all moves posible
                 List<Move> moveList = movesCollection.ToList();
                 for (int i = 0; i < moveList.Count; i++)
                 {
                     gameStateStack.Push(gameState);
                     Move newGameMove = moveList[i];
-                    HandleMove(newGameMove);
-                    bestMove = Math.Min(bestMove, MiniMax(depth - 1, gameState, alpha, beta));
+                    gameState.MakeMove(newGameMove);
+                    bestMove = Math.Min(bestMove, MiniMax(depth - 1, gameState, alpha, beta, player.Oppenent()));
                     if (gameStateStack.Count > 0)
                     {
                         gameState = gameStateStack.Pop();
@@ -456,8 +467,9 @@ namespace ChessUI
             socket.IP = loginMenu.IPTextBox.Text;
             if (!socket.ConnectServer()) // is server
             {
-                socket.CreateServer();
                 player = Player.White;
+                socket.CreateServer();
+                
             }
             else // is client
             {
@@ -486,7 +498,6 @@ namespace ChessUI
             }
 
         }
-
 
 
         /*

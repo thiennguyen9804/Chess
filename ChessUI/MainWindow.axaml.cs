@@ -51,7 +51,6 @@ namespace ChessUI
             timer.IsEnabled = false;
             timer.Tick += Timer_Tick;
         }
-
         private void Timer_Tick(object sender, EventArgs e)
         {
             if (gameState.timerWhite.TotalSeconds != 0 && gameState.timerBlack.TotalSeconds != 0)
@@ -183,6 +182,7 @@ namespace ChessUI
             gameState = otherGameState;
             //gameState.CurrentPlayer.Oppenent();
             DrawBoard_OtherPlayer(gameState.Board);
+            timer.Start();
             //isTurn = true;
         }
 
@@ -442,6 +442,7 @@ namespace ChessUI
         }
         private void RestartGame()
         {
+            timer.Stop();
             selectedPos = null;
             HideHighlights();
             moveCache.Clear();

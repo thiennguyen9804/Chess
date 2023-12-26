@@ -7,10 +7,12 @@ namespace ChessLogic
     {
         public Board Board { get; set; }
         public Player CurrentPlayer { get; private set; }
-        public Result Result { get; private set; } = null;
+        public Result Result { get; set; } = null;
         private int noCaptureOrPawnMoves = 0;
         private string stateString;
-        private readonly Dictionary<string,int> stateHistory = new Dictionary<string,int>();
+        private readonly Dictionary<string, int> stateHistory = new Dictionary<string, int>();
+        public TimeSpan timerWhite { get; set; } = new TimeSpan(0, 10, 0);
+        public TimeSpan timerBlack { get; set; } = new TimeSpan(0, 10, 0);
         public GameState(Player player, Board board) 
         {
             CurrentPlayer = player;
@@ -66,13 +68,12 @@ namespace ChessLogic
             {
                 if (Board.IsInCheck(CurrentPlayer))
                 {
-                    Result = Result.Win(CurrentPlayer.Oppenent());
+                    Result = Result.Win(CurrentPlayer.Oppenent(), EndReason.Checkmate);
                 }
                 else
                 {
                     Result = Result.Draw(EndReason.Stalemate);
                 }
-                
             }
             else if (Board.InsufficientMaterial())
             {

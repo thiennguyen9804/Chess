@@ -23,6 +23,7 @@ namespace ChessUI
         private readonly Dictionary<Position, Move> moveCache = new Dictionary<Position, Move>();
         private GameState gameState;
         private Position selectedPos = null;
+        private DispatcherTimer timer = new DispatcherTimer();
         private SocketManager socket;
         private LoginMenu loginMenu;
         private Board board = new Board();
@@ -42,7 +43,44 @@ namespace ChessUI
             gameState = new GameState(Player.White, board.Initial());
             DrawBoard(gameState.Board);
             SetCursor(gameState.CurrentPlayer);
+            InitializeTimer();
         }
+        private void InitializeTimer() 
+        {
+            timer.Interval = TimeSpan.FromMilliseconds(1000);
+            timer.IsEnabled = false;
+            timer.Tick += Timer_Tick;
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            if (gameState.timerWhite.TotalSeconds != 0 && gameState.timerBlack.TotalSeconds != 0)
+            {
+                if (gameState.CurrentPlayer == Player.White)
+                {
+                    gameState.timerWhite = gameState.timerWhite.Subtract(new TimeSpan(0, 0, 1));
+                    TimerTextBox.Text = gameState.timerWhite.ToString(@"mm\:ss");
+                }
+                else
+                {
+                    gameState.timerBlack = gameState.timerBlack.Subtract(new TimeSpan(0, 0, 1));
+                    TimerTextBox2.Text = gameState.timerBlack.ToString(@"mm\:ss");
+                }
+            }
+            else
+            {
+                if (gameState.timerWhite.TotalSeconds == 0)
+                {
+                    gameState.Result = Result.Win(Player.Black, EndReason.Timeout);
+                }
+                else
+                {
+                    gameState.Result = Result.Win(Player.White, EndReason.Timeout);
+                }
+                ShowGameOver();
+            }
+        }
+
         private void InitializeBoard()
         {
             for (int r = 0; r < 8; r++)
@@ -203,6 +241,7 @@ namespace ChessUI
             gameState.MakeMove(move);
             DrawBoard(gameState.Board);
             SetCursor(gameState.CurrentPlayer);
+            timer.Start();
 
             if (gameState.IsGameOver())
             {
@@ -242,7 +281,6 @@ namespace ChessUI
         
         private void AIMakeMove(Player player)
         {
-            board.
             GameState copyGameState = new GameState(player, board.Copy());
             Move bestMove = MiniMaxRoot(3, copyGameState, player);
             HandleMove(bestMove);

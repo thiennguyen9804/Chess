@@ -27,7 +27,7 @@
 		</Style>
 		<Style Selector="Button">
 			<Setter Property="FontFamily" Value="Seoge UI Light"/>
-			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="FontSize" Value="18"/>
 			<Setter Property="BorderThickness" Value="2"/>
 			<Setter Property="BorderBrush" Value="{DynamicResource StrokeColor}"/>
 			<Setter Property="Background" Value="{DynamicResource ButtonColor}"/>

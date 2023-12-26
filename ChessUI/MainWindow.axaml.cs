@@ -242,7 +242,7 @@ namespace ChessUI
         
         private void AIMakeMove(Player player)
         {
-            board.
+            //board.
             GameState copyGameState = new GameState(player, board.Copy());
             Move bestMove = MiniMaxRoot(3, copyGameState, player);
             HandleMove(bestMove);
